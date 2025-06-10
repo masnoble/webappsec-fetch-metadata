@@ -87,6 +87,7 @@ HTTP request headers:
 ```
 Sec-Fetch-Dest: image
 Sec-Fetch-Frame-Ancestors: cross-site
+Sec-Fetch-Frame-Top: cross-site
 Sec-Fetch-Mode: no-cors
 Sec-Fetch-Site: cross-site
 ```
@@ -96,6 +97,7 @@ on an in-page link would result in a request containing the following HTTP reque
 
 ```
 Sec-Fetch-Dest: document
+Sec-Fetch-Frame-Ancestors: same-origin
 Sec-Fetch-Mode: navigate
 Sec-Fetch-Site: same-origin
 Sec-Fetch-User: ?1
@@ -173,13 +175,8 @@ value is a [=structured header/token=]. [[!I-D.ietf-httpbis-header-structure]] I
 Sec-Fetch-Frame-Ancestors = sh-token
 ```
 
-Valid `Sec-Fetch-Frame-Ancestors` values include "`cross-site`", "`same-origin`", "`same-site`",
-and "`none`". In order to support forward-compatibility with as-yet-unknown request types,
+Valid `Sec-Fetch-Frame-Ancestors` values include "`cross-site`", "`same-origin`", and "`same-site`". In order to support forward-compatibility with as-yet-unknown request types,
 servers SHOULD ignore this header if it contains an invalid value.
-
-Note: This header is delivered for all requests other than top-level navigations. Those are
-identifiable by examining the &#96;<a http-header>`Sec-Fetch-Dest`</a>&#96;header's value, so we
-can safely omit this header as it would be fully redundant in that case.
 
 <div algorithm="set `Sec-Fetch-Frame-Ancestors`">
 To <dfn abstract-op lt="set-frame-ancestors">set the `Sec-Fetch-Frame-Ancestors` header</dfn> for a [=request=] |r|:
@@ -187,40 +184,68 @@ To <dfn abstract-op lt="set-frame-ancestors">set the `Sec-Fetch-Frame-Ancestors`
 <ol class="algorithm">
     1.  Assert: |r|'s [=request/url=] is a [=potentially trustworthy URL=].
 
-    2.  If |r|'s [=request/destination=] is "`document`", return.
+    1.  If |r|'s [=request/destination=] is "`document`", return.
 
-    3.  Let |header| be a [=Structured Header=] whose value is a [=structured header/token=].
+    1.  Let |header| be a [=Structured Header=] whose value is a [=structured header/token=].
 
-    3.  Set |header|'s value to "`same-origin`"..
+    1.  Set |header|'s value to "`same-origin`"..
 
-    4.  Let |site| be the result of <a abstract-op lt="determine-site">determining |r|'s site value</a>.
+    1.  For each |ancestor| in |r|'s [=request/client=]'s [=environment settings object/global object=]'s
+        [=associated Document|associated `Document`=]'s [=Document/inclusive ancestor navigables=]:            
 
-    5.  Switch on |site|, and run the associated steps:
+        1.  Let |ancestor origin| be |ancestor|'s [=navigable/active document=]'s [=Document/origin=].
 
-        :   "`none`"
-        ::  Set |header|'s value to "`none`".
-        :   "`cross-site`"
-        ::  Set |header|'s value to "`cross-site`".
-        :   "`same-site`"
-        :   "`same-origin`"
-        ::  For each |ancestor| in |r|'s [=request/client=]'s [=environment settings object/global object=]'s
-            [=associated `Document`=]'s [=Document/inclusive ancestor navigables=]:            
+        1.  If |ancestor origin| is not [=same site=] with |r|'s [=request/origin=], set |header|'s value
+            to "`cross-site`", and [=iteration/break=].
 
-            1.  Let |ancestor origin| be |ancestor|'s [=navigable/active document=]'s [=Document/origin=].
+        1.  If |ancestor origin| is not [=same origin=] with |r|'s [=request/origin=], set |header|'s value
+            to "`same-site`".
 
-            2.  If |ancestor origin| is not [=same site=] with |r|'s [=request/origin=], set |header|'s value
-                to "`cross-site`", and [=iteration/break=].
-
-            3.  If |ancestor origin| is not [=same origin=] with |r|'s [=request/origin=], set |header|'s value
-                to "`same-site`", and [=iteration/break=].
-
-        Note: We're relying on the fact that <a abstract-op lt='determine-site'>determine a request's site value</a> walks the
-        redirect chain, and the output can be "`same-site`" or "`same-origin`" only in cases where the
-        request's client is same-origin or same-site with each item in the chain. The only things we
-        need to compare, then, are the ancestor chain and the request's request/origin.
-     
-    6.  [=header list/Set a structured field value=]
+    1.  [=header list/Set a structured field value=]
         &#96;<a http-header>`Sec-Fetch-Frame-Ancestors`</a>&#96;/|header| in |r|'s [=request/header list=].
+</ol>
+</div>
+
+
+The `Sec-Fetch-Frame-Top` HTTP Request Header {#Sec-Fetch-Frame-Top}
+---------------------------------------------------------------------------------------
+
+The <dfn http-header export>`Sec-Fetch-Frame-Top`</dfn> HTTP request header exposes the
+relationship between a [=request=]'s target origin, and the origin of its top-frame document.
+It is a [=Structured Header=] whose value is a [=structured header/token=]. [[!I-D.ietf-httpbis-header-structure]] Its ABNF is:
+
+```
+Sec-Fetch-Frame-Top = sh-token
+```
+
+Valid `Sec-Fetch-Frame-Top` values include "`cross-site`", "`same-origin`", and "`same-site`".
+In order to support forward-compatibility with as-yet-unknown request types,
+servers SHOULD ignore this header if it contains an invalid value.
+
+Note: This header is delivered for all requests other than top-level navigations. Those are
+identifiable by examining the &#96;<a http-header>`Sec-Fetch-Dest`</a>&#96;header's value, so we
+can safely omit this header as it would be fully redundant in that case.
+
+<div algorithm="set `Sec-Fetch-Frame-Top`">
+To <dfn abstract-op lt="set-frame-top">set the `Sec-Fetch-Frame-Top` header</dfn> for a [=request=] |r|:
+
+<ol class="algorithm">
+    1.  Assert: |r|'s [=request/url=] is a [=potentially trustworthy URL=].
+
+    1.  If |r|'s [=request/destination=] is "`document`", return.
+
+    1.  Let |header| be a [=Structured Header=] whose value is a [=structured header/token=].
+
+    1.  Set |header|'s value to "`cross-site`".
+
+    1.  Let |top-frame origin| be the [=Document/top-level traversable=]'s [=Document/origin=].
+
+    1.  If |top-frame origin| is [=same site=] with |r|'s [=request/origin=], set |header|'s value to "`same-site`".
+
+    1.  If |top-frame origin| is [=same origin=] with |r|'s [=request/origin=], set |header|'s value to "`same-origin`".
+     
+    1.  [=header list/Set a structured field value=]
+        &#96;<a http-header>`Sec-Fetch-Frame-Top`</a>&#96;/|header| in |r|'s [=request/header list=].
 </ol>
 </div>
 
@@ -271,32 +296,6 @@ Valid `Sec-Fetch-Site` values include "`cross-site`", "`same-origin`", "`same-si
 In order to support forward-compatibility with as-yet-unknown request types, servers SHOULD ignore
 this header if it contains an invalid value.
 
-<div algorithm="determine request's site">
-To <dfn abstract-op lt="determine-site">determine a request's site value</dfn> for a [=request=] |r|:
-
-<ol class="algorithm">
-    1.  Let |result| be "`same-origin`".
-
-    2.  If |r| is a [=navigation request=] that was explicitly caused by a user's interaction with
-        the user agent (by typing an address into the user agent directly, for example, or by
-        clicking a bookmark, etc.), then set |result| to "`none`".
-
-        Note: See [[#directly-user-initiated]] for more detail on this somewhat poorly-defined step.
-
-    3.  If |result| is not "`none`", then for each |url| in |r|'s [=request/url list=]:
-
-        1.  If |url| is [=same origin=] with |r|'s [=request/origin=], [=iteration/continue=].
-
-        2.  Set |result| to "`cross-site`".
-
-        3.  If |r|'s [=request/origin=] is not [=same site=] with |url|'s [=url/origin=], then [=iteration/break=].
-
-        4.  Set |result| to "`same-site`".
-
-    4.  Return |result|.
-</ol>
-</div>
-
 <div algorithm="set `Sec-Fetch-Site`">
 To <dfn abstract-op lt="set-site">set the `Sec-Fetch-Site` header</dfn> for a [=request=] |r|:
 
@@ -305,9 +304,25 @@ To <dfn abstract-op lt="set-site">set the `Sec-Fetch-Site` header</dfn> for a [=
 
     2.  Let |header| be a [=Structured Field=] whose value is a [=structured field/token=].
 
-    3.  Set |header|'s value to the result of <a abstract-op lt="determine-site">determining |r|'s site value</a>.
+    3.  Set |header|'s value to `same-origin`.
 
-    4.  [=header list/Set a structured field value=]
+    4.  If |r| is a [=navigation request=] that was explicitly caused by a user's interaction with
+        the user agent (by typing an address into the user agent directly, for example, or by
+        clicking a bookmark, etc.), then set |header|'s value to `none`.
+
+        Note: See [[#directly-user-initiated]] for more detail on this somewhat poorly-defined step.
+
+    5.  If |header|'s value is not `none`, then for each |url| in |r|'s [=request/url list=]:
+
+        1.  If |url| is [=same origin=] with |r|'s [=request/origin=], [=iteration/continue=].
+
+        2.  Set |header|'s value to `cross-site`.
+
+        3.  If |r|'s [=request/origin=] is not [=same site=] with |url|'s [=url/origin=], then [=iteration/break=].
+
+        4.  Set |header|'s value to `same-site`.
+
+    6.  [=header list/Set a structured field value=]
         &#96;<a http-header>`Sec-Fetch-Site`</a>&#96;/|header| in |r|'s [=request/header list=].
 </ol>
 </div>
@@ -368,6 +383,8 @@ To <dfn abstract-op export>append the Fetch metadata headers for a request</dfn>
     2.  <a abstract-op lt='set-dest'>Set the `Sec-Fetch-Dest` header</a> for |r|.
 
     3.  <a abstract-op lt='set-frame-ancestors'>Set the `Sec-Fetch-Frame-Ancestors` header</a> for |r|.
+
+    3.  <a abstract-op lt='set-frame-top'>Set the `Sec-Fetch-Frame-Top` header</a> for |r|.
 
     4.  <a abstract-op lt='set-mode'>Set the `Sec-Fetch-Mode` header</a> for |r|.
 
