@@ -167,28 +167,28 @@ The `Sec-Fetch-Frame-Ancestors` HTTP Request Header {#sec-fetch-frame-ancestors-
 ---------------------------------------------------------------------------------------
 
 The <dfn http-header export>`Sec-Fetch-Frame-Ancestors`</dfn> HTTP request header exposes the
-relationship between a [=request=]'s initiator's origin, its target origin, and the origins of
-the chain of ancestor documents that embed the initiator. It is a [=Structured Header=] whose
-value is a [=structured header/token=]. [[!I-D.ietf-httpbis-header-structure]] Its ABNF is:
+relationship between a [=request=]'s [=request/origin=], its [=request/url=]'s [=url/origin=], and the origins of
+the chain of ancestor documents that embed the initiator. It is a [=Structured Field=] whose
+value is a [=structured field/token=].  [[!RFC9651]] Its ABNF is:
 
-```
-Sec-Fetch-Frame-Ancestors = sh-token
-```
+<pre>
+Sec-Fetch-Frame-Ancestors = <a grammar>sf-token</a>
+</pre>
 
-Valid `Sec-Fetch-Frame-Ancestors` values include "`cross-site`", "`same-origin`", and "`same-site`". In order to support forward-compatibility with as-yet-unknown request types,
+An <dfn>origin relation</dfn> is one of "<dfn for="origin relation">cross-site</dfn>", "<dfn for="origin relation">same-site</dfn>", or "<dfn for="origin relation">same-origin</dfn>".
+
+Valid `Sec-Fetch-Frame-Ancestors` values include "<code>[=origin relation/cross-site=]</code>", "<code>[=origin relation/same-site=]</code>", and "<code>[=origin relation/same-origin=]</code>". In order to support forward-compatibility with as-yet-unknown request types,
 servers SHOULD ignore this header if it contains an invalid value.
 
-<div algorithm="set `Sec-Fetch-Frame-Ancestors`">
+<div algorithm=>
 To <dfn abstract-op lt="set-frame-ancestors">set the `Sec-Fetch-Frame-Ancestors` header</dfn> for a [=request=] |r|:
 
 <ol class="algorithm">
     1.  Assert: |r|'s [=request/url=] is a [=potentially trustworthy URL=].
 
-    1.  If |r|'s [=request/destination=] is "`document`", return.
+    1.  Let |header| be a [=Structured Field=] whose value is a [=structured field/token=].
 
-    1.  Let |header| be a [=Structured Header=] whose value is a [=structured header/token=].
-
-    1.  Set |header|'s value to "`same-origin`"..
+    1.  Set |header|'s value to "`same-origin`".
 
     1.  For each |ancestor| in |r|'s [=request/client=]'s [=environment settings object/global object=]'s
         [=associated Document|associated `Document`=]'s [=Document/inclusive ancestor navigables=]:            
@@ -201,8 +201,8 @@ To <dfn abstract-op lt="set-frame-ancestors">set the `Sec-Fetch-Frame-Ancestors`
         1.  If |ancestor origin| is not [=same origin=] with |r|'s [=request/origin=], set |header|'s value
             to "`same-site`".
 
-    1.  [=header list/Set a structured field value=]
-        &#96;<a http-header>`Sec-Fetch-Frame-Ancestors`</a>&#96;/|header| in |r|'s [=request/header list=].
+    1.  Set a structured field value given <code>("Sec-Fetch-Frame-Ancestors", |header|)</code> in |r|'s [=request/header list=].
+
 </ol>
 </div>
 
@@ -211,14 +211,14 @@ The `Sec-Fetch-Frame-Top` HTTP Request Header {#Sec-Fetch-Frame-Top}
 ---------------------------------------------------------------------------------------
 
 The <dfn http-header export>`Sec-Fetch-Frame-Top`</dfn> HTTP request header exposes the
-relationship between a [=request=]'s target origin, and the origin of its top-frame document.
-It is a [=Structured Header=] whose value is a [=structured header/token=]. [[!I-D.ietf-httpbis-header-structure]] Its ABNF is:
+relationship between a [=request=]'s [=request/url=]'s [=url/origin=], and the origin of its top-frame document.
+It is a [=Structured Field=] whose value is a [=structured field/token=].  [[!RFC9651]] Its ABNF is:
 
-```
-Sec-Fetch-Frame-Top = sh-token
-```
+<pre>
+Sec-Fetch-Frame-Top = <a grammar>sf-token</a>
+</pre>
 
-Valid `Sec-Fetch-Frame-Top` values include "`cross-site`", "`same-origin`", and "`same-site`".
+Valid `Sec-Fetch-Frame-Top` values include "<code>[=origin relation/cross-site=]</code>", "<code>[=origin relation/same-site=]</code>", and "<code>[=origin relation/same-origin=]</code>".
 In order to support forward-compatibility with as-yet-unknown request types,
 servers SHOULD ignore this header if it contains an invalid value.
 
@@ -234,11 +234,12 @@ To <dfn abstract-op lt="set-frame-top">set the `Sec-Fetch-Frame-Top` header</dfn
 
     1.  If |r|'s [=request/destination=] is "`document`", return.
 
-    1.  Let |header| be a [=Structured Header=] whose value is a [=structured header/token=].
+    1.  Let |header| be a [=Structured Field=] whose value is a [=structured field/token=].
 
     1.  Set |header|'s value to "`cross-site`".
 
-    1.  Let |top-frame origin| be the [=Document/top-level traversable=]'s [=Document/origin=].
+    1.  Let |top-frame origin| be |r|'s [=request/client=]'s [=environment settings object/global object=]'s
+        [=associated Document|associated `Document`=]'s [=Document/origin=].
 
     1.  If |top-frame origin| is [=same site=] with |r|'s [=request/origin=], set |header|'s value to "`same-site`".
 
@@ -380,17 +381,17 @@ To <dfn abstract-op export>append the Fetch metadata headers for a request</dfn>
 <ol class="algorithm">
     1.  If |r|'s [=request/url=] is not an [=potentially trustworthy URL=], return.
 
-    2.  <a abstract-op lt='set-dest'>Set the `Sec-Fetch-Dest` header</a> for |r|.
+    1.  <a abstract-op lt='set-dest'>Set the `Sec-Fetch-Dest` header</a> for |r|.
 
-    3.  <a abstract-op lt='set-frame-ancestors'>Set the `Sec-Fetch-Frame-Ancestors` header</a> for |r|.
+    1.  <a abstract-op lt='set-frame-ancestors'>Set the `Sec-Fetch-Frame-Ancestors` header</a> for |r|.
 
-    3.  <a abstract-op lt='set-frame-top'>Set the `Sec-Fetch-Frame-Top` header</a> for |r|.
+    1.  <a abstract-op lt='set-frame-top'>Set the `Sec-Fetch-Frame-Top` header</a> for |r|.
 
-    4.  <a abstract-op lt='set-mode'>Set the `Sec-Fetch-Mode` header</a> for |r|.
+    1.  <a abstract-op lt='set-mode'>Set the `Sec-Fetch-Mode` header</a> for |r|.
 
-    5.  <a abstract-op lt='set-site'>Set the `Sec-Fetch-Site` header</a> for |r|.
+    1.  <a abstract-op lt='set-site'>Set the `Sec-Fetch-Site` header</a> for |r|.
 
-    6.  <a abstract-op lt='set-user'>Set the `Sec-Fetch-User` header</a> for |r|.
+    1.  <a abstract-op lt='set-user'>Set the `Sec-Fetch-User` header</a> for |r|.
 </ol>
 </div>
 
