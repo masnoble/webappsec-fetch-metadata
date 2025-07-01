@@ -201,7 +201,7 @@ To <dfn abstract-op lt="set-frame-ancestors">set the `Sec-Fetch-Frame-Ancestors`
         1.  If |ancestor origin| is not [=same origin=] with |r|'s [=request/origin=], set |header|'s value
             to "`same-site`".
 
-    1.  Set a structured field value given <code>("Sec-Fetch-Frame-Ancestors", |header|)</code> in |r|'s [=request/header list=].
+    1.  [=header list/Set a structured field value=] given <code>("Sec-Fetch-Frame-Ancestors", |header|)</code> in |r|'s [=request/header list=].
 
 </ol>
 </div>
@@ -223,7 +223,7 @@ In order to support forward-compatibility with as-yet-unknown request types,
 servers SHOULD ignore this header if it contains an invalid value.
 
 Note: This header is delivered for all requests other than top-level navigations. Those are
-identifiable by examining the &#96;<a http-header>`Sec-Fetch-Dest`</a>&#96;header's value, so we
+identifiable by examining the <a http-header>`Sec-Fetch-Dest`</a> header's value, so we
 can safely omit this header as it would be fully redundant in that case.
 
 <div algorithm="set `Sec-Fetch-Frame-Top`">
@@ -245,8 +245,7 @@ To <dfn abstract-op lt="set-frame-top">set the `Sec-Fetch-Frame-Top` header</dfn
 
     1.  If |top-frame origin| is [=same origin=] with |r|'s [=request/origin=], set |header|'s value to "`same-origin`".
      
-    1.  [=header list/Set a structured field value=]
-        &#96;<a http-header>`Sec-Fetch-Frame-Top`</a>&#96;/|header| in |r|'s [=request/header list=].
+    1.  [=header list/Set a structured field value=] given <code>("Sec-Fetch-Frame-Top", |header|)</code> in |r|'s [=request/header list=].
 </ol>
 </div>
 
